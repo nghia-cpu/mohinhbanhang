@@ -8,44 +8,24 @@
     body { font-family: Arial, sans-serif; margin: 0; padding: 16px; background: #0f172a; color: #f8fafc; }
     .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
     .sound-btn { padding: 10px 14px; border: none; border-radius: 8px; background: #38bdf8; color: #082f49; font-weight: bold; cursor: pointer; }
-    
-    /* Thanh chuyển đổi cửa sổ (Tabs) */
-    .tabs { display: flex; gap: 10px; margin-bottom: 18px; border-bottom: 1px solid #334155; padding-bottom: 12px; flex-wrap: wrap; }
-    .tab-btn { padding: 10px 16px; border: 1px solid #334155; border-radius: 8px; background: #1e293b; color: #94a3b8; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; }
-    .tab-btn.active { background: #38bdf8; color: #082f49; border-color: #38bdf8; }
-    .tab-btn.active.done-tab { background: #22c55e; color: #052e16; border-color: #22c55e; }
-    .count-pill { display: inline-block; margin-left: 6px; padding: 2px 7px; border-radius: 999px; font-size: 12px; background: rgba(0,0,0,0.25); color: inherit; }
-
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
     .order-card { background: #1e293b; border-left: 5px solid #22c55e; border-radius: 10px; padding: 14px; }
     .order-card.making { border-left-color: #f59e0b; }
-    .order-card.done { border-left-color: #64748b; opacity: 0.85; }
+    .order-card.done { border-left-color: #64748b; opacity: 0.65; }
     .badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; background: #22c55e; color: #052e16; }
     .making .badge { background: #f59e0b; color: #451a03; }
     .done .badge { background: #64748b; color: #fff; }
     .mode-tag { display: inline-block; margin-left: 6px; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: bold; background: #334155; color: #e2e8f0; vertical-align: middle; }
     .item-note { color: #7dd3fc; font-size: 12px; margin-top: 2px; }
     .order-note { color: #fde047; font-size: 13px; margin-bottom: 8px; padding: 6px 8px; background: rgba(253, 224, 71, 0.08); border-radius: 6px; }
-    .actions button { margin-top: 10px; margin-right: 6px; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-    .empty-msg { grid-column: 1 / -1; text-align: center; padding: 40px 16px; color: #64748b; font-size: 15px; background: #1e293b; border-radius: 10px; }
+    .actions button { margin-top: 10px; margin-right: 6px; padding: 7px 11px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
   </style>
 </head>
 <body>
   <div class="top">
-    <h2 style="margin:0;">QUẦY TIẾP NHẬN ĐƠN</h2>
+    <h2 style="margin:0;">QUẦY TIẾP NHẬN ĐƠN </h2>
     <button class="sound-btn" onclick="enableSound()">Bật chuông báo đơn</button>
   </div>
-
-  <!-- 2 cửa sổ chuyển đổi -->
-  <div class="tabs">
-    <button id="tab-active" class="tab-btn active" onclick="switchTab('active')">
-      Đơn cần làm <span id="count-active" class="count-pill">0</span>
-    </button>
-    <button id="tab-done" class="tab-btn done-tab" onclick="switchTab('done')">
-      Bàn đã hoàn thành <span id="count-done" class="count-pill">0</span>
-    </button>
-  </div>
-
   <div id="orders-grid" class="grid"></div>
 
   <script type="module">
@@ -67,8 +47,6 @@
 
     let soundEnabled = false;
     let isFirstLoad = true;
-    let currentTab = "active"; // 'active' = Đơn cần làm, 'done' = Bàn đã hoàn thành
-    let allOrders = [];
     const knownIds = new Set();
 
     function escapeHtml(str = "") {
@@ -103,35 +81,25 @@
       update(ref(db, `orders/${orderId}`), { status });
     };
 
-    window.switchTab = function(tab) {
-      currentTab = tab;
-      document.getElementById("tab-active").classList.toggle("active", tab === "active");
-      document.getElementById("tab-done").classList.toggle("active", tab === "done");
-      renderOrders();
-    };
+    onValue(ref(db, "orders"), (snapshot) => {
+      const data = snapshot.val() || {};
+      const list = Object.entries(data).map(([id, val]) => ({ id, ...val }));
+      list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
-    function renderOrders() {
-      const activeList = allOrders.filter(o => o.status !== "done");
-      const doneList = allOrders.filter(o => o.status === "done");
+      let hasNewOrder = false;
+      for (const o of list) {
+        if (!knownIds.has(o.id)) {
+          knownIds.add(o.id);
+          if (!isFirstLoad && o.status === "new") hasNewOrder = true;
+        }
+      }
+      isFirstLoad = false;
+      if (hasNewOrder) playBeep();
 
-      // Cập nhật số lượng trên 2 tab
-      document.getElementById("count-active").textContent = activeList.length;
-      document.getElementById("count-done").textContent = doneList.length;
-
-      const displayList = currentTab === "active" ? activeList : doneList;
       const statusLabel = { new: "ĐƠN MỚI", making: "ĐANG PHA", done: "ĐÃ XONG" };
       const grid = document.getElementById("orders-grid");
 
-      if (displayList.length === 0) {
-        grid.innerHTML = `<div class="empty-msg">${
-          currentTab === "active" 
-            ? "Hiện chưa có đơn nào đang chờ." 
-            : "Chưa có bàn nào hoàn thành."
-        }</div>`;
-        return;
-      }
-
-      grid.innerHTML = displayList.map(o => {
+      grid.innerHTML = list.map(o => {
         const tableText = escapeHtml(o.table || "Mang về");
         const modeText = o.orderType ? `<span class="mode-tag">${escapeHtml(o.orderType)}</span>` : "";
         const itemsHtml = (o.items || []).map(i => `
@@ -140,16 +108,6 @@
             ${i.note ? `<div class="item-note">↳ Ghi chú món: ${escapeHtml(i.note)}</div>` : ""}
           </li>
         `).join("");
-
-        // Nút thao tác khác nhau tùy theo cửa sổ đang mở
-        const actionButtons = currentTab === "active"
-          ? `
-            <button style="background:#f59e0b;color:#111;" onclick="setStatus('${o.id}', 'making')">Đang pha</button>
-            <button style="background:#22c55e;color:#111;" onclick="setStatus('${o.id}', 'done')">Hoàn tất</button>
-          `
-          : `
-            <button style="background:#38bdf8;color:#082f49;" onclick="setStatus('${o.id}', 'making')">Khôi phục lại đơn</button>
-          `;
 
         return `
           <div class="order-card ${escapeHtml(o.status || 'new')}">
@@ -166,29 +124,12 @@
             ${o.note ? `<div class="order-note">Ghi chú đơn: ${escapeHtml(o.note)}</div>` : ""}
             <div style="font-weight:bold;">Tổng: ${(o.total || 0).toLocaleString("vi-VN")}đ</div>
             <div class="actions">
-              ${actionButtons}
+              <button style="background:#f59e0b;color:#111;" onclick="setStatus('${o.id}', 'making')">Đang pha</button>
+              <button style="background:#22c55e;color:#111;" onclick="setStatus('${o.id}', 'done')">Hoàn tất</button>
             </div>
           </div>
         `;
       }).join("");
-    }
-
-    onValue(ref(db, "orders"), (snapshot) => {
-      const data = snapshot.val() || {};
-      allOrders = Object.entries(data).map(([id, val]) => ({ id, ...val }));
-      allOrders.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
-      let hasNewOrder = false;
-      for (const o of allOrders) {
-        if (!knownIds.has(o.id)) {
-          knownIds.add(o.id);
-          if (!isFirstLoad && (o.status === "new" || !o.status)) hasNewOrder = true;
-        }
-      }
-      isFirstLoad = false;
-      if (hasNewOrder) playBeep();
-
-      renderOrders();
     });
   </script>
 </body>
