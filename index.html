@@ -354,7 +354,6 @@
       cursor: not-allowed;
     }
 
-    /* Modal mật khẩu & trang thiết lập thực đơn */
     .modal-backdrop {
       display: none;
       position: fixed;
@@ -609,7 +608,7 @@
   <div id="settings-modal" class="modal-backdrop">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 class="modal-title">Thiết lập thực đơn (Thêm / Sửa giá / Xóa)</h3>
+        <h3 class="modal-title">Thiết lập thực đơn (Đồng bộ realtime)</h3>
         <button type="button" class="close-btn" onclick="closeModals()">✕</button>
       </div>
 
@@ -648,7 +647,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBghiBbYsyo7F5AjWgcQqcCXyoVHi5nVz8",
@@ -662,8 +661,8 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    const menuRef = ref(db, "menu");
 
-    const STORAGE_KEY = "quan_menu_items_v1";
     const ADMIN_PASS = "abcd";
     const CATEGORIES = ["Đồ uống", "Đồ ăn", "Mì cay"];
 
@@ -688,24 +687,8 @@
       { id: 16, category: "Mì cay", name: "Mì cay thập cẩm đặc biệt", price: 55000 }
     ];
 
-    function loadMenu() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch (_) {}
-      return DEFAULT_MENU.map(x => ({ ...x }));
-    }
-
-    let MENU = loadMenu();
-
-    function saveMenu() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(MENU));
-      renderMenu();
-      renderAdminMenu();
-    }
+    let MENU = DEFAULT_MENU.map(x => ({ ...x }));
+    let seededDefault = false;
 
     const cart = {};
     const itemNotes = {};
@@ -721,6 +704,44 @@
     const settingsModalEl = document.getElementById("settings-modal");
     const passInputEl = document.getElementById("pass-input");
     const passErrorEl = document.getElementById("pass-error");
+
+    onValue(menuRef, (snapshot) => {
+      const val = snapshot.val();
+      if (Array.isArray(val) && val.length > 0) {
+        MENU = val.filter(Boolean).map(m => ({
+          id: Number(m.id),
+          category: m.category || "Đồ uống",
+          name: String(m.name || ""),
+          price: Number(m.price || 0)
+        }));
+      } else if (val && typeof val === "object") {
+        const arr = Object.values(val).filter(Boolean);
+        if (arr.length > 0) {
+          MENU = arr.map(m => ({
+            id: Number(m.id),
+            category: m.category || "Đồ uống",
+            name: String(m.name || ""),
+            price: Number(m.price || 0)
+          }));
+        }
+      } else if (!seededDefault) {
+        seededDefault = true;
+        MENU = DEFAULT_MENU.map(x => ({ ...x }));
+        set(menuRef, MENU).catch(() => {});
+      }
+
+      renderMenu();
+      if (settingsModalEl.classList.contains("open")) {
+        renderAdminMenu();
+      }
+    });
+
+    async function pushMenuToCloud(nextMenu) {
+      MENU = nextMenu;
+      renderMenu();
+      renderAdminMenu();
+      await set(menuRef, MENU);
+    }
 
     window.openSettingsAuth = function() {
       passInputEl.value = "";
@@ -745,7 +766,7 @@
       }
     };
 
-    window.addMenuItem = function() {
+    window.addMenuItem = async function() {
       const nameEl = document.getElementById("new-item-name");
       const priceEl = document.getElementById("new-item-price");
       const catEl = document.getElementById("new-item-cat");
@@ -766,283 +787,20 @@
       }
 
       const nextId = MENU.reduce((max, m) => Math.max(max, Number(m.id) || 0), 0) + 1;
-      MENU.push({ id: nextId, category, name, price });
+      const updated = [...MENU, { id: nextId, category, name, price }];
       nameEl.value = "";
       priceEl.value = "";
-      saveMenu();
+
+      try {
+        await pushMenuToCloud(updated);
+      } catch (err) {
+        alert("Lỗi lưu món lên hệ thống: " + err.message);
+      }
     };
 
-    window.updateItemPrice = function(id) {
+    window.updateItemPrice = async function(id) {
       const inputEl = document.getElementById(`admin-price-${id}`);
       const catSelectEl = document.getElementById(`admin-cat-${id}`);
       if (!inputEl) return;
 
       const newPrice = Number(inputEl.value);
-      if (!Number.isFinite(newPrice) || newPrice < 0) {
-        alert("Giá tiền không hợp lệ!");
-        inputEl.focus();
-        return;
-      }
-
-      MENU = MENU.map(item =>
-        item.id === id
-          ? { ...item, price: newPrice, category: catSelectEl ? catSelectEl.value : item.category }
-          : item
-      );
-      saveMenu();
-      alert("Đã cập nhật giá món!");
-    };
-
-    window.deleteMenuItem = function(id) {
-      const target = MENU.find(m => m.id === id);
-      if (!target) return;
-      if (!confirm(`Xóa món "${target.name}" khỏi thực đơn?`)) return;
-
-      MENU = MENU.filter(m => m.id !== id);
-      delete cart[id];
-      delete itemNotes[id];
-      saveMenu();
-    };
-
-    window.resetDefaultMenu = function() {
-      if (!confirm("Khôi phục lại danh sách món mặc định ban đầu?")) return;
-      MENU = DEFAULT_MENU.map(x => ({ ...x }));
-      saveMenu();
-    };
-
-    function renderAdminMenu() {
-      const container = document.getElementById("admin-menu-list");
-      if (!container) return;
-
-      if (MENU.length === 0) {
-        container.innerHTML = `<div style="color:#6b7280; font-size:13px; padding:10px 0;">Chưa có món nào. Hãy thêm món mới ở trên.</div>`;
-        return;
-      }
-
-      container.innerHTML = MENU.map(item => `
-        <div class="admin-item-row">
-          <div>
-            <div style="font-weight:700; font-size:14px;">${escapeHtml(item.name)}</div>
-            <div style="font-size:11px; color:#6b7280;">${escapeHtml(item.category)}</div>
-          </div>
-          <select id="admin-cat-${item.id}" class="modal-input admin-cat-select" style="padding:7px 8px; font-size:12px;">
-            ${CATEGORIES.map(c => `<option value="${c}" ${item.category === c ? "selected" : ""}>${c}</option>`).join("")}
-          </select>
-          <input
-            id="admin-price-${item.id}"
-            type="number"
-            min="0"
-            step="1000"
-            class="modal-input"
-            style="padding:7px 8px; font-size:13px; font-weight:700;"
-            value="${item.price}"
-          />
-          <div style="display:flex; gap:5px;">
-            <button type="button" class="btn-save-price" onclick="updateItemPrice(${item.id})">Lưu giá</button>
-            <button type="button" class="btn-del-item" onclick="deleteMenuItem(${item.id})">Xóa</button>
-          </div>
-        </div>
-      `).join("");
-    }
-
-    window.selectOrderMode = function(mode) {
-      selectedMode = mode;
-      orderBoxEl.classList.remove("alert-border");
-      btnDineInEl.classList.toggle("active", mode === "dine_in");
-      btnTakeawayEl.classList.toggle("active", mode === "takeaway");
-      tableBigBoxEl.classList.toggle("visible", mode === "dine_in");
-      syncTableTitle();
-
-      if (mode === "dine_in") {
-        tableSelectEl.focus();
-      }
-    };
-
-    window.onSelectTable = function() {
-      orderBoxEl.classList.remove("alert-border");
-      syncTableTitle();
-    };
-
-    window.syncTableTitle = function() {
-      const titleEl = document.getElementById("table-title");
-      if (!selectedMode) {
-        titleEl.innerText = "Chưa chọn hình thức đặt đơn";
-        return;
-      }
-      if (selectedMode === "takeaway") {
-        titleEl.innerText = "Đặt đơn: MANG VỀ";
-        return;
-      }
-      const val = tableSelectEl.value.trim();
-      titleEl.innerText = val ? `Tại quán · BÀN ${val}` : "Tại quán · Chưa chọn số bàn";
-    };
-
-    window.setCategory = function(cat) {
-      activeCategory = cat;
-      document.querySelectorAll(".tab-btn").forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.cat === cat);
-      });
-      renderMenu();
-    };
-
-    window.changeQty = function(id, delta) {
-      const next = (cart[id] || 0) + delta;
-      if (next <= 0) delete cart[id];
-      else cart[id] = next;
-      renderMenu();
-    };
-
-    window.updateItemNote = function(id, value) {
-      const trimmed = value.trim();
-      if (trimmed) itemNotes[id] = value;
-      else delete itemNotes[id];
-    };
-
-    function escapeHtml(str = "") {
-      return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-    }
-
-    function renderItemCard(item) {
-      const qty = cart[item.id] || 0;
-      const noteVal = itemNotes[item.id] || "";
-      const placeholderNote = item.category === "Mì cay"
-        ? "VD: cấp độ 2, không hành, thêm nấm..."
-        : item.category === "Đồ uống"
-          ? "VD: ít đá, ít ngọt, mang ra trước..."
-          : "VD: nhiều tương ớt, giòn kỹ...";
-
-      return `
-        <div class="card">
-          <div class="card-top">
-            <div>
-              <div class="item-name">${escapeHtml(item.name)}</div>
-              <div class="item-price">${Number(item.price || 0).toLocaleString("vi-VN")}đ</div>
-            </div>
-            <div class="qty-controls">
-              <button class="btn-qty" onclick="changeQty(${item.id}, -1)">-</button>
-              <span class="qty-val">${qty}</span>
-              <button class="btn-qty" onclick="changeQty(${item.id}, 1)">+</button>
-            </div>
-          </div>
-          <div class="item-note-row">
-            <span class="item-note-label">Ghi chú món:</span>
-            <input
-              type="text"
-              class="item-note-input"
-              value="${escapeHtml(noteVal)}"
-              placeholder="${escapeHtml(placeholderNote)}"
-              oninput="updateItemNote(${item.id}, this.value)"
-            />
-          </div>
-        </div>
-      `;
-    }
-
-    function renderMenu() {
-      const box = document.getElementById("menu-list");
-      const catsToShow = activeCategory === "all" ? CATEGORIES : [activeCategory];
-
-      box.innerHTML = catsToShow.map(cat => {
-        const itemsInCat = MENU.filter(m => m.category === cat);
-        const headingHtml = activeCategory === "all"
-          ? `<div class="category-heading">${escapeHtml(cat)}</div>`
-          : "";
-        return headingHtml + itemsInCat.map(renderItemCard).join("");
-      }).join("");
-
-      updateCartBar();
-    }
-
-    function updateCartBar() {
-      let totalQty = 0, totalPrice = 0;
-      for (const [id, qty] of Object.entries(cart)) {
-        const item = MENU.find(m => m.id === Number(id));
-        if (item) {
-          totalQty += qty;
-          totalPrice += Number(item.price || 0) * qty;
-        }
-      }
-      document.getElementById("cart-summary").innerText = `${totalQty} món - ${totalPrice.toLocaleString("vi-VN")}đ`;
-    }
-
-    window.submitOrder = async function() {
-      if (!selectedMode) {
-        orderBoxEl.classList.add("alert-border");
-        alert("Bạn phải tự tay bấm chọn 'UỐNG / ĂN TẠI QUÁN' hoặc 'MANG VỀ' trước khi gửi đơn!");
-        return;
-      }
-
-      const rawTable = tableSelectEl.value.trim();
-      if (selectedMode === "dine_in" && !rawTable) {
-        orderBoxEl.classList.add("alert-border");
-        alert("Bạn đã chọn Tại quán — vui lòng kích chọn số bàn (từ 1 đến 10) trước khi gửi đơn!");
-        tableSelectEl.focus();
-        return;
-      }
-
-      const items = Object.entries(cart).map(([id, qty]) => {
-        const numId = Number(id);
-        const item = MENU.find(m => m.id === numId);
-        if (!item) return null;
-        const dishNote = (itemNotes[numId] || "").trim();
-        return {
-          id: item.id,
-          category: item.category,
-          name: item.name,
-          price: Number(item.price || 0),
-          qty,
-          note: dishNote
-        };
-      }).filter(Boolean);
-
-      if (items.length === 0) {
-        alert("Bạn hãy chọn ít nhất 1 món trước khi gửi!");
-        return;
-      }
-
-      const tableLabel = selectedMode === "takeaway" ? "Mang về" : rawTable;
-      const modeText = selectedMode === "takeaway" ? "Mang về" : "Tại quán";
-      const total = items.reduce((sum, i) => sum + i.price * i.qty, 0);
-      const orderNote = document.getElementById("order-note").value.trim();
-      const btn = document.getElementById("send-btn");
-      btn.disabled = true;
-      btn.innerText = "Đang gửi...";
-
-      try {
-        await push(ref(db, "orders"), {
-          table: tableLabel,
-          orderType: modeText,
-          items,
-          total,
-          note: orderNote,
-          status: "new",
-          createdAt: Date.now()
-        });
-
-        for (const k of Object.keys(cart)) delete cart[k];
-        for (const k of Object.keys(itemNotes)) delete itemNotes[k];
-        document.getElementById("order-note").value = "";
-        syncTableTitle();
-        renderMenu();
-        alert(
-          selectedMode === "takeaway"
-            ? "Đã gửi đơn MANG VỀ! Quầy đang tiếp nhận."
-            : `Đã gửi đơn TẠI QUÁN (Bàn ${rawTable})! Quầy đang tiếp nhận.`
-        );
-      } catch (err) {
-        alert("Lỗi gửi đơn: " + err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "Gửi đơn";
-      }
-    };
-
-    syncTableTitle();
-    renderMenu();
-  </script>
-</body>
-</html>
