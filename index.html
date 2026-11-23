@@ -14,6 +14,7 @@
       --accent: #16a34a;
       --accent-text: #ffffff;
       --border: #e5e7eb;
+      --danger: #dc2626;
     }
 
     * { box-sizing: border-box; }
@@ -35,15 +36,37 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
 
+    .header-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
     .header-sub {
-      font-size: 12px;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      opacity: 0.75;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0.9;
+    }
+
+    .settings-btn {
+      background: rgba(255, 255, 255, 0.14);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .settings-btn:hover {
+      background: rgba(255, 255, 255, 0.24);
     }
 
     .header-title {
-      margin: 4px 0 0;
+      margin: 6px 0 0;
       font-size: 21px;
       font-weight: 700;
     }
@@ -181,7 +204,8 @@
 
     .item-note-input:focus,
     .table-select-big:focus,
-    .note-box:focus {
+    .note-box:focus,
+    .modal-input:focus {
       outline: none;
       border-color: #111827;
       background: #fff;
@@ -197,7 +221,6 @@
       font-size: 14px;
     }
 
-    /* Khu vực đặt đơn & chọn bàn cố định phía dưới */
     .bottom-panel {
       position: fixed;
       bottom: 0;
@@ -330,12 +353,167 @@
       opacity: 0.6;
       cursor: not-allowed;
     }
+
+    /* Modal mật khẩu & trang thiết lập thực đơn */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      z-index: 60;
+      padding: 16px;
+      overflow-y: auto;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 640px;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-title {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .close-btn {
+      border: none;
+      background: #f3f4f6;
+      color: #111827;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 9px;
+      border: 1.5px solid #cbd5e1;
+      font-size: 14px;
+      background: #fff;
+      color: #111827;
+    }
+
+    .add-form {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 16px;
+      display: grid;
+      grid-template-columns: 1fr 130px 130px auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    @media (max-width: 600px) {
+      .add-form {
+        grid-template-columns: 1fr 1fr;
+      }
+      .add-form .add-name-input {
+        grid-column: 1 / -1;
+      }
+      .add-form .add-submit-btn {
+        grid-column: 1 / -1;
+      }
+    }
+
+    .admin-item-row {
+      display: grid;
+      grid-template-columns: 1fr 115px 110px auto;
+      gap: 8px;
+      align-items: center;
+      padding: 9px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    @media (max-width: 600px) {
+      .admin-item-row {
+        grid-template-columns: 1fr 95px auto;
+      }
+      .admin-cat-select {
+        grid-column: 1 / -1;
+      }
+    }
+
+    .btn-primary-sm {
+      background: #111827;
+      color: #fff;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 9px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-save-price {
+      background: #16a34a;
+      color: #fff;
+      border: none;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .btn-del-item {
+      background: #fee2e2;
+      color: #dc2626;
+      border: none;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .btn-reset-menu {
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
   <div class="header">
-    <div class="header-sub">Menu gọi món tại quầy</div>
-    <h2 id="table-title" class="header-title">XIN CHÀO</h2>
+    <div class="header-top-row">
+      <div class="header-sub">Xin chào! Menu gọi món tại quầy</div>
+      <button type="button" class="settings-btn" onclick="openSettingsAuth()">Thiết lập</button>
+    </div>
+    <h2 id="table-title" class="header-title">Chưa chọn hình thức đặt đơn</h2>
   </div>
 
   <div class="tabs">
@@ -400,6 +578,74 @@
     </div>
   </div>
 
+  <!-- Modal nhập mật khẩu -->
+  <div id="auth-modal" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 380px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Xác thực Thiết lập</h3>
+        <button type="button" class="close-btn" onclick="closeModals()">✕</button>
+      </div>
+      <div style="font-size: 13px; color: #4b5563; margin-bottom: 10px;">
+        Nhập mật khẩu để mở phần thêm, sửa giá và xóa món:
+      </div>
+      <input
+        id="pass-input"
+        type="password"
+        class="modal-input"
+        placeholder="Nhập mật khẩu..."
+        onkeydown="if(event.key==='Enter') verifyPassword()"
+      />
+      <div id="pass-error" style="color: #dc2626; font-size: 12px; margin-top: 6px; display: none;">
+        Mật khẩu không đúng!
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px;">
+        <button type="button" class="btn-reset-menu" onclick="closeModals()">Hủy</button>
+        <button type="button" class="btn-primary-sm" onclick="verifyPassword()">Mở thiết lập</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal quản lý thêm / sửa giá / xóa món -->
+  <div id="settings-modal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Thiết lập thực đơn (Thêm / Sửa giá / Xóa)</h3>
+        <button type="button" class="close-btn" onclick="closeModals()">✕</button>
+      </div>
+
+      <div style="font-size: 13px; font-weight: 700; margin-bottom: 6px;">Thêm món mới:</div>
+      <div class="add-form">
+        <input
+          id="new-item-name"
+          type="text"
+          class="modal-input add-name-input"
+          placeholder="Tên món mới..."
+        />
+        <input
+          id="new-item-price"
+          type="number"
+          min="0"
+          step="1000"
+          class="modal-input"
+          placeholder="Giá (vd: 25000)"
+        />
+        <select id="new-item-cat" class="modal-input">
+          <option value="Đồ uống">Đồ uống</option>
+          <option value="Đồ ăn">Đồ ăn</option>
+          <option value="Mì cay">Mì cay</option>
+        </select>
+        <button type="button" class="btn-primary-sm add-submit-btn" onclick="addMenuItem()">+ Thêm</button>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px; flex-wrap: wrap;">
+        <span style="font-size: 13px; font-weight: 700;">Danh sách món hiện tại (sửa giá trực tiếp):</span>
+        <button type="button" class="btn-reset-menu" onclick="resetDefaultMenu()">Khôi phục mặc định</button>
+      </div>
+
+      <div id="admin-menu-list"></div>
+    </div>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -417,10 +663,11 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    const STORAGE_KEY = "quan_menu_items_v1";
+    const ADMIN_PASS = "abcd";
     const CATEGORIES = ["Đồ uống", "Đồ ăn", "Mì cay"];
 
-    const MENU = [
-      // --- ĐỒ UỐNG ---
+    const DEFAULT_MENU = [
       { id: 1, category: "Đồ uống", name: "Cà phê đen đá", price: 20000 },
       { id: 2, category: "Đồ uống", name: "Cà phê sữa đá", price: 25000 },
       { id: 3, category: "Đồ uống", name: "Bạc xỉu", price: 28000 },
@@ -430,24 +677,39 @@
       { id: 7, category: "Đồ uống", name: "Trà vải nhiệt đới", price: 30000 },
       { id: 8, category: "Đồ uống", name: "Matcha đá xay", price: 38000 },
 
-      // --- ĐỒ ĂN ---
       { id: 9, category: "Đồ ăn", name: "Khoai tây chiên", price: 30000 },
       { id: 10, category: "Đồ ăn", name: "Xúc xích đức nướng", price: 25000 },
       { id: 11, category: "Đồ ăn", name: "Gà viên chiên giòn", price: 35000 },
       { id: 12, category: "Đồ ăn", name: "Bánh mì bơ tỏi", price: 28000 },
 
-      // --- MÌ CAY ---
       { id: 13, category: "Mì cay", name: "Mì cay bò mỹ", price: 45000 },
       { id: 14, category: "Mì cay", name: "Mì cay hải sản", price: 48000 },
       { id: 15, category: "Mì cay", name: "Mì cay xúc xích phô mai", price: 42000 },
       { id: 16, category: "Mì cay", name: "Mì cay thập cẩm đặc biệt", price: 55000 }
     ];
 
+    function loadMenu() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (_) {}
+      return DEFAULT_MENU.map(x => ({ ...x }));
+    }
+
+    let MENU = loadMenu();
+
+    function saveMenu() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(MENU));
+      renderMenu();
+      renderAdminMenu();
+    }
+
     const cart = {};
     const itemNotes = {};
     let activeCategory = "all";
-
-    // Bắt buộc người dùng tự tay bấm chọn ("dine_in" hoặc "takeaway"), không chọn sẵn
     let selectedMode = "";
 
     const orderBoxEl = document.getElementById("order-box");
@@ -455,6 +717,133 @@
     const tableBigBoxEl = document.getElementById("table-big-box");
     const btnDineInEl = document.getElementById("btn-dine-in");
     const btnTakeawayEl = document.getElementById("btn-takeaway");
+    const authModalEl = document.getElementById("auth-modal");
+    const settingsModalEl = document.getElementById("settings-modal");
+    const passInputEl = document.getElementById("pass-input");
+    const passErrorEl = document.getElementById("pass-error");
+
+    window.openSettingsAuth = function() {
+      passInputEl.value = "";
+      passErrorEl.style.display = "none";
+      authModalEl.classList.add("open");
+      setTimeout(() => passInputEl.focus(), 50);
+    };
+
+    window.closeModals = function() {
+      authModalEl.classList.remove("open");
+      settingsModalEl.classList.remove("open");
+    };
+
+    window.verifyPassword = function() {
+      if (passInputEl.value === ADMIN_PASS) {
+        authModalEl.classList.remove("open");
+        renderAdminMenu();
+        settingsModalEl.classList.add("open");
+      } else {
+        passErrorEl.style.display = "block";
+        passInputEl.focus();
+      }
+    };
+
+    window.addMenuItem = function() {
+      const nameEl = document.getElementById("new-item-name");
+      const priceEl = document.getElementById("new-item-price");
+      const catEl = document.getElementById("new-item-cat");
+
+      const name = nameEl.value.trim();
+      const price = Number(priceEl.value);
+      const category = catEl.value;
+
+      if (!name) {
+        alert("Vui lòng nhập tên món mới!");
+        nameEl.focus();
+        return;
+      }
+      if (!Number.isFinite(price) || price < 0) {
+        alert("Vui lòng nhập giá tiền hợp lệ!");
+        priceEl.focus();
+        return;
+      }
+
+      const nextId = MENU.reduce((max, m) => Math.max(max, Number(m.id) || 0), 0) + 1;
+      MENU.push({ id: nextId, category, name, price });
+      nameEl.value = "";
+      priceEl.value = "";
+      saveMenu();
+    };
+
+    window.updateItemPrice = function(id) {
+      const inputEl = document.getElementById(`admin-price-${id}`);
+      const catSelectEl = document.getElementById(`admin-cat-${id}`);
+      if (!inputEl) return;
+
+      const newPrice = Number(inputEl.value);
+      if (!Number.isFinite(newPrice) || newPrice < 0) {
+        alert("Giá tiền không hợp lệ!");
+        inputEl.focus();
+        return;
+      }
+
+      MENU = MENU.map(item =>
+        item.id === id
+          ? { ...item, price: newPrice, category: catSelectEl ? catSelectEl.value : item.category }
+          : item
+      );
+      saveMenu();
+      alert("Đã cập nhật giá món!");
+    };
+
+    window.deleteMenuItem = function(id) {
+      const target = MENU.find(m => m.id === id);
+      if (!target) return;
+      if (!confirm(`Xóa món "${target.name}" khỏi thực đơn?`)) return;
+
+      MENU = MENU.filter(m => m.id !== id);
+      delete cart[id];
+      delete itemNotes[id];
+      saveMenu();
+    };
+
+    window.resetDefaultMenu = function() {
+      if (!confirm("Khôi phục lại danh sách món mặc định ban đầu?")) return;
+      MENU = DEFAULT_MENU.map(x => ({ ...x }));
+      saveMenu();
+    };
+
+    function renderAdminMenu() {
+      const container = document.getElementById("admin-menu-list");
+      if (!container) return;
+
+      if (MENU.length === 0) {
+        container.innerHTML = `<div style="color:#6b7280; font-size:13px; padding:10px 0;">Chưa có món nào. Hãy thêm món mới ở trên.</div>`;
+        return;
+      }
+
+      container.innerHTML = MENU.map(item => `
+        <div class="admin-item-row">
+          <div>
+            <div style="font-weight:700; font-size:14px;">${escapeHtml(item.name)}</div>
+            <div style="font-size:11px; color:#6b7280;">${escapeHtml(item.category)}</div>
+          </div>
+          <select id="admin-cat-${item.id}" class="modal-input admin-cat-select" style="padding:7px 8px; font-size:12px;">
+            ${CATEGORIES.map(c => `<option value="${c}" ${item.category === c ? "selected" : ""}>${c}</option>`).join("")}
+          </select>
+          <input
+            id="admin-price-${item.id}"
+            type="number"
+            min="0"
+            step="1000"
+            class="modal-input"
+            style="padding:7px 8px; font-size:13px; font-weight:700;"
+            value="${item.price}"
+          />
+          <div style="display:flex; gap:5px;">
+            <button type="button" class="btn-save-price" onclick="updateItemPrice(${item.id})">Lưu giá</button>
+            <button type="button" class="btn-del-item" onclick="deleteMenuItem(${item.id})">Xóa</button>
+          </div>
+        </div>
+      `).join("");
+    }
 
     window.selectOrderMode = function(mode) {
       selectedMode = mode;
@@ -477,7 +866,7 @@
     window.syncTableTitle = function() {
       const titleEl = document.getElementById("table-title");
       if (!selectedMode) {
-        titleEl.innerText = "XIN CHÀO";
+        titleEl.innerText = "Chưa chọn hình thức đặt đơn";
         return;
       }
       if (selectedMode === "takeaway") {
@@ -523,7 +912,7 @@
       const placeholderNote = item.category === "Mì cay"
         ? "VD: cấp độ 2, không hành, thêm nấm..."
         : item.category === "Đồ uống"
-          ? "VD: ít đá, ít ngọt,..."
+          ? "VD: ít đá, ít ngọt, mang ra trước..."
           : "VD: nhiều tương ớt, giòn kỹ...";
 
       return `
@@ -531,7 +920,7 @@
           <div class="card-top">
             <div>
               <div class="item-name">${escapeHtml(item.name)}</div>
-              <div class="item-price">${item.price.toLocaleString("vi-VN")}đ</div>
+              <div class="item-price">${Number(item.price || 0).toLocaleString("vi-VN")}đ</div>
             </div>
             <div class="qty-controls">
               <button class="btn-qty" onclick="changeQty(${item.id}, -1)">-</button>
@@ -574,7 +963,7 @@
         const item = MENU.find(m => m.id === Number(id));
         if (item) {
           totalQty += qty;
-          totalPrice += item.price * qty;
+          totalPrice += Number(item.price || 0) * qty;
         }
       }
       document.getElementById("cart-summary").innerText = `${totalQty} món - ${totalPrice.toLocaleString("vi-VN")}đ`;
@@ -598,16 +987,17 @@
       const items = Object.entries(cart).map(([id, qty]) => {
         const numId = Number(id);
         const item = MENU.find(m => m.id === numId);
+        if (!item) return null;
         const dishNote = (itemNotes[numId] || "").trim();
         return {
           id: item.id,
           category: item.category,
           name: item.name,
-          price: item.price,
+          price: Number(item.price || 0),
           qty,
           note: dishNote
         };
-      });
+      }).filter(Boolean);
 
       if (items.length === 0) {
         alert("Bạn hãy chọn ít nhất 1 món trước khi gửi!");
